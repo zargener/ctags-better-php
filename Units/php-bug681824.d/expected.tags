@@ -1,1 +1,0 @@
-db_query	Units/php-bug681824.d/input.php	/^ function db_query$/;"	f	signature:($pDB, $pQuery)
