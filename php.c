@@ -353,11 +353,8 @@ static void findPHPTags (void) {
     total_ns = 0;
     free_vars_count = 0;
     
-    const char *line;
-    int str_len = 0;
     char prev_char = 0;
     int curr_char = 0;
-
 
     int line_number = 0;
     unsigned int fpos = 0;
@@ -366,11 +363,13 @@ static void findPHPTags (void) {
 
     char token[1024];
     char prev_token[1024];
-    char token_len = 0;
-    char cb[6];
-    /* magic number 6 because of len of "<?php" */
-#define CYCLE_BUFFER  cb[5] = 0; cb[0] = cb[1]; cb[1] = cb[2]; cb[2] = cb[3]; cb[3] = cb[4]; cb[4] = curr_char; 
+    int token_len = 0;
     char in_php = 0;
+
+    /* magic number 6 because of len of "<?php" */
+    char cb[6];
+
+#define CYCLE_BUFFER  cb[5] = 0; cb[0] = cb[1]; cb[1] = cb[2]; cb[2] = cb[3]; cb[3] = cb[4]; cb[4] = curr_char; 
     
     while ((curr_char = fileGetc()) != EOF )    {
         fpos++;
