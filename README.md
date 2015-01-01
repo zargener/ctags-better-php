@@ -28,7 +28,7 @@ it.
 
 There how it looks for end-user:
 
-![alt tag](https://raw.github.com/username/projectname/branch/path/to/img.png)
+![alt tag](https://raw.githubusercontent.com/zargener/ctags-better-php/master/demo.gif)
 
 =====================================================================
 
