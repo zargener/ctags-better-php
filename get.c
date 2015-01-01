@@ -33,7 +33,7 @@
 /*
 *   DATA DECLARATIONS
 */
-typedef enum { COMMENT_NONE, COMMENT_C, COMMENT_CPLUS } Comment;
+typedef enum { COMMENT_NONE, COMMENT_C, COMMENT_CPLUS, COMMENT_D } Comment;
 
 enum eCppLimits {
 	MaxCppNestingLevel = 20,
@@ -64,6 +64,8 @@ typedef struct sCppState {
 	int		ungetch, ungetch2;   /* ungotten characters, if any */
 	boolean resolveRequired;     /* must resolve if/else/elif/endif branch */
 	boolean hasAtLiteralStrings; /* supports @"c:\" strings */
+	boolean hasSingleQuoteLiteralNumbers; /* supports vera number literals:
+						 'h..., 'o..., 'd..., and 'b... */
 	struct sDirective {
 		enum eState state;       /* current directive being processed */
 		boolean	accept;          /* is a directive syntactically permitted? */
@@ -85,6 +87,7 @@ static cppState Cpp = {
 	'\0', '\0',  /* ungetch characters */
 	FALSE,       /* resolveRequired */
 	FALSE,       /* hasAtLiteralStrings */
+	FALSE,	     /* hasSingleQuoteLiteralNumbers */
 	{
 		DRCTV_NONE,  /* state */
 		FALSE,       /* accept */
@@ -108,7 +111,8 @@ extern unsigned int getDirectiveNestLevel (void)
 	return Cpp.directive.nestLevel;
 }
 
-extern void cppInit (const boolean state, const boolean hasAtLiteralStrings)
+extern void cppInit (const boolean state, const boolean hasAtLiteralStrings,
+		     const boolean hasSingleQuoteLiteralNumbers)
 {
 	BraceFormat = state;
 
@@ -116,6 +120,7 @@ extern void cppInit (const boolean state, const boolean hasAtLiteralStrings)
 	Cpp.ungetch2        = '\0';
 	Cpp.resolveRequired = FALSE;
 	Cpp.hasAtLiteralStrings = hasAtLiteralStrings;
+	Cpp.hasSingleQuoteLiteralNumbers = hasSingleQuoteLiteralNumbers;
 
 	Cpp.directive.state     = DRCTV_NONE;
 	Cpp.directive.accept    = TRUE;
@@ -305,7 +310,7 @@ static void makeDefineTag (const char *const name)
 	{
 		tagEntryInfo e;
 		initTagEntry (&e, name);
-		e.lineNumberEntry = (boolean) (Option.locate != EX_PATTERN);
+		e.lineNumberEntry = (boolean) (Option.locate == EX_LINENUM);
 		e.isFileScope  = isFileScope;
 		e.truncateLine = TRUE;
 		e.kindName     = "macro";
@@ -426,6 +431,8 @@ static Comment isComment (void)
 		comment = COMMENT_C;
 	else if (next == '/')
 		comment = COMMENT_CPLUS;
+	else if (next == '+')
+		comment = COMMENT_D;
 	else
 	{
 		fileUngetc (next);
@@ -477,6 +484,33 @@ static int skipOverCplusComment (void)
 	return c;
 }
 
+/* Skips over a D style comment.
+ * Really we should match nested /+ comments. At least they're less common.
+ */
+static int skipOverDComment (void)
+{
+	int c = fileGetc ();
+
+	while (c != EOF)
+	{
+		if (c != '+')
+			c = fileGetc ();
+		else
+		{
+			const int next = fileGetc ();
+
+			if (next != '/')
+				c = next;
+			else
+			{
+				c = SPACE;  /* replace comment with space */
+				break;
+			}
+		}
+	}
+	return c;
+}
+
 /*  Skips to the end of a string, returning a special character to
  *  symbolically represent a generic string.
  */
@@ -515,12 +549,15 @@ static int skipToEndOfChar (void)
 			fileUngetc (c);
 			break;
 		}
-		else if (count == 1  &&  strchr ("DHOB", toupper (c)) != NULL)
-			veraBase = c;
-		else if (veraBase != '\0'  &&  ! isalnum (c))
+		else if (Cpp.hasSingleQuoteLiteralNumbers)
 		{
-			fileUngetc (c);
-			break;
+			if (count == 1  &&  strchr ("DHOB", toupper (c)) != NULL)
+				veraBase = c;
+			else if (veraBase != '\0'  &&  ! isalnum (c))
+			{
+				fileUngetc (c);
+				break;
+			}
 		}
 	}
 	return CHAR_SYMBOL;  /* symbolic representation of character */
@@ -596,6 +633,8 @@ process:
 					if (c == NEWLINE)
 						fileUngetc (c);
 				}
+				else if (comment == COMMENT_D)
+					c = skipOverDComment ();
 				else
 					Cpp.directive.accept = FALSE;
 				break;

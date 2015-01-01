@@ -36,6 +36,7 @@
 #define HAVE_FINDNEXT 1
 #define HAVE_TEMPNAM 1
 #define HAVE_FNMATCH 1
+#define HAVE_FNMATCH_H 1
 #define tempnam(dir,pfx) _tempnam(dir,pfx)
 #define TMPDIR "\\"
 
@@ -50,11 +51,18 @@
 # define HAVE__FINDFIRST 1
 # define HAVE_DIRECT_H 1
 
+#define snprintf _snprintf
+
 # if _MSC_VER >= 1300
 #  define findfirst_t intptr_t  /* Visual Studio 7 */
 # else
 #  define findfirst_t long      /* Visual Studio 6 or earlier */
 # endif
+
+# ifndef _CRT_SECURE_NO_DEPRECATE
+#  define _CRT_SECURE_NO_DEPRECATE 1
+# endif
+# pragma warning(disable : 4996)
 
 #elif defined (__MINGW32__)
 

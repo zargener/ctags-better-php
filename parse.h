@@ -79,7 +79,7 @@ typedef struct {
 	unsigned int kindCount;        /* size of `kinds' list */
 	const char *const *extensions; /* list of default extensions */
 	const char *const *patterns;   /* list of default file name patterns */
-	const char *const *aliases;    /* list of default aliases (altenative names) */
+	const char *const *aliases;    /* list of default aliases (alternative names) */
 	parserInitialize initialize;   /* initialization routine, if needed */
 	parserFinalize finalize;       /* finalize routine, if needed */
 	simpleParser parser;           /* simple parser (common case) */
@@ -140,7 +140,7 @@ extern void addCorpusFile (const langType language, const char* const spec, vStr
 extern void addTgEntryForExtension (const langType language, const char* const ext, unsigned char* const tg_table);
 extern void addTgEntryForPattern (const langType language, const char* const pattern, unsigned char* const tg_table);
 
-extern void printLanguageMap (const langType language);
+extern void printLanguageMap (const langType language, FILE *fp);
 extern void printLanguageMaps (const langType language);
 extern void unifyLanguageMaps (void);
 extern void enableLanguages (const boolean state);

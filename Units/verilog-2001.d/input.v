@@ -2,8 +2,13 @@
 // module wrong;
 // endmodule
 `define DEFINE
+`define DEF_WITH_EQ = 1'd100
+`define DEF_VALUE   1'd100
 
-module mod (
+module mod#(
+    parameter PARAM1 = 10,
+    parameter PARAM2 = 2.0
+) (
     input wire a,
     b,c,
     d ,
@@ -12,10 +17,19 @@ module mod (
     inout wire g
 );
 
-parameter PARAM = 1;
+localparam LOCALPARAM = 2**2;
+
+localparam STATE1 = 4'h0,
+           STATE2 = 4'h1,
+           STATE3 = 4'h2,
+           STATE4 = 4'h5    ,
+           STATE5 = 4'h6    ,
+           STATE6 = 4'h7    ,
+           STATE7 = 4'h8;
 
 real k;
 integer l;
+reg signed [3:0] scounter;
 
 task add (
     input x, y,
@@ -24,10 +38,14 @@ task add (
     z = x + y;
 endtask
 
-function mult (
+function integer mult (
     input x,
     input y);
     mult = x * y;
+endfunction
+
+function [1:0] func_with_range (k, l);
+    func_with_range = {k, l};
 endfunction
 
 endmodule // mod

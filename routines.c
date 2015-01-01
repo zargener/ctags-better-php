@@ -308,15 +308,25 @@ extern int strnuppercmp (const char *s1, const char *s2, size_t n)
 extern char* strstr (const char *str, const char *substr)
 {
 	const size_t length = strlen (substr);
-	const char *match = NULL;
 	const char *p;
 
-	for (p = str  ;  *p != '\0'  &&  match == NULL  ;  ++p)
+	for (p = str  ;  *p != '\0'  ;  ++p)
 		if (strncmp (p, substr, length) == 0)
-			match = p;
-	return (char*) match;
+			return (char*) p;
+	return NULL;
 }
 #endif
+
+extern char* strrstr (const char *str, const char *substr)
+{
+	const size_t length = strlen (substr);
+	const char *p;
+
+	for (p = str + strlen(str) - length  ;  p >= str  ;  --p)
+		if (strncmp (p, substr, length) == 0)
+			return (char*) p;
+	return NULL;
+}
 
 extern char* eStrdup (const char* str)
 {
@@ -629,29 +639,6 @@ extern const char *fileExtension (const char *const fileName)
 		extension = pDelimiter + 1;  /* skip to first char of extension */
 
 	return extension;
-}
-
-extern char* templateFileExtensionNew (const char *const fileName,
-				       const char *const templateExt)
-{
-	const char *pDelimiter = NULL;
-	const char *const base = baseFilename (fileName);
-	char* shorten_base;
-	const char* ext;
-	char* r;
-
-	pDelimiter = strrchr (base, templateExt[0]);
-
-	if (pDelimiter && (strcmp (pDelimiter, templateExt) == 0))
-	{
-		shorten_base = eStrndup (base, pDelimiter - base);
-		ext = fileExtension (shorten_base);
-		r = eStrdup (ext);
-		eFree (shorten_base);
-		return r;
-	}
-	else
-		return NULL;
 }
 
 extern char* baseFilenameSansExtensionNew (const char *const fileName,

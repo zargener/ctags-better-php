@@ -2,7 +2,7 @@ Tracking other projects
 ======================================================================
 
 This is working note for tracking activities other projects,
-expecially activity at exuberant-ctags.
+especially activity at exuberant-ctags.
 
 I put this as the top of this hacking guide because
 I consider tracking activities as the first class fruits
@@ -87,7 +87,7 @@ subversion
 bugs
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   <358>  Vim parser: Segmentation fault when reaing empty vim file
+   <358>  Vim parser: Segmentation fault when reading empty vim file
 	 * directly contributed by the original author of bug report and patch::
 
 	   	e0f854f0100e7a3cb8b959a23d6036e43f6b6c85
@@ -105,6 +105,11 @@ bugs
 	 * merged the improved version::
 
 	   	216880c5287e0421d9c49898d983144db61c83aa
+
+   <271> regex callback is broken; <320> [PATCH] fix regex callback match count
+	 * merged patch (with updated bug number)::
+
+		a12b3a24b62d6535a968e076675f68bac9ad32ba 
 
 
 `patches <https://sourceforge.net/p/ctags/patches/%d>`_
@@ -133,7 +138,7 @@ Patches are always there. So it is easy to evaluate the value:)
 
    <84> C++11 new using semantics
 
-	* solved by annother implementation::
+	* solved by another implementation::
 
 	      c93e3bfa05b70d7fbc2539454c957eb2169e16b3
 	      502355489b1ba748b1a235641bbd512ba6da315e
@@ -312,9 +317,9 @@ http://anonscm.debian.org/cgit/users/cjwatson/exuberant-ctags.git/tree/debian/pa
 	Not in fishman tree.
 	
 	I don't want to merge this patch. I think ctags should extract
-	as much as possible informatoin from input source code.
+	as much as possible information from input source code.
 	The user has responsibility to filter out the noise.
-	The definition of noise is upto the user.
+	The definition of noise is up to the user.
 
 <vim-command-loop.patch>
 
@@ -348,30 +353,48 @@ Geany has created a library out of ctags
 Their language parsers have many improvements to various parsers.
 Changes known by fishman devs worth backporting:
 
+* HTML reads <h1><h2><h3> tags
 * Make has support for targets
-* SQL tags are stored with scopes instead of "tablename.field"
+* Various fixes for D parser (c.c), but currently the code diverges
+  from ours to some extent.
 
 
-They have a these additional language parsers:
+They have these additional language parsers:
 
 * `Abaqus <http://en.wikipedia.org/wiki/Abaqus>`_
 * `ActionScript <http://en.wikipedia.org/wiki/ActionScript>`_
 * `AsciiDoc <http://en.wikipedia.org/wiki/AsciiDoc>`_
 * `DocBook <http://en.wikipedia.org/wiki/DocBook>`_
+* `Ferite (c.c) <http://en.wikipedia.org/wiki/Ferite>`_
+* `GLSL (c.c) <http://en.wikipedia.org/wiki/OpenGL_Shading_Language>`_
 * `Haskell <http://en.wikipedia.org/wiki/Haskell_%28programming_language%29>`_
 * `Haxe <http://en.wikipedia.org/wiki/Haxe>`_
 * `NSIS <http://en.wikipedia.org/wiki/Nullsoft_Scriptable_Install_System>`_
 * `R <http://en.wikipedia.org/wiki/R_%28programming_language%29>`_
+* `Rust <http://rust-lang.org>`_
 * `reStructuredText (reST) <http://en.wikipedia.org/wiki/ReStructuredText>`_
 * `txt2tags <http://en.wikipedia.org/wiki/Txt2tags>`_ 
+* `Vala (c.c) <http://en.wikipedia.org/wiki/Vala_%28programming_language%29>`_
+
+
+These changes have been merged:
+
+* Fix regex callback match count - https://github.com/fishman/ctags/pull/104 
+* SQL tags are stored with scopes instead of "tablename.field" - https://github.com/fishman/ctags/pull/100
+* Some fixes for D parser
 
 
 `VIM-Japan <https://github.com/vim-jp/ctags/>`_
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+VIM-Japan have some interesting things, especially regarding encoding
+
+`Anjuta <https://git.gnome.org/browse/anjuta/tree/plugins/symbol-db/anjuta-tags>`_
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Anjuta is a Gnome IDE. They did not fork Exuberant ctags, but they did
 natively include it in Anjuta. They have made several additions to
-thier version of it including fairly extensive Vala langauge support.
+their version of it including fairly extensive Vala language support.
 
 tagbar
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -380,7 +403,7 @@ Wiki
 
 	https://github.com/majutsushi/tagbar/wiki
 
-	This is a gold mine of xcmd and optlib.
+This is a gold mine of xcmd and optlib.
 
 	
 External command(xcmd)

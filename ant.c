@@ -27,13 +27,19 @@ static void installAntRegex (const langType language)
 		"^[ \t]*<[ \t]*project[^>]+name=\"([^\"]+)\".*", "\\1", "p,project,projects", NULL);
 	addTagRegex (language,
 		"^[ \t]*<[ \t]*target[^>]+name=\"([^\"]+)\".*", "\\1", "t,target,targets", NULL);
+	addTagRegex (language,
+		"^[ \t]*<[ \t]*property[^>]+name=\"([^\"]+)\".*", "\\1", "P,property,property", NULL);
+	addTagRegex (language,
+		"^[ \t]*<[ \t]*import[^>]+file=\"([^\"]+)\".*", "\\1", "i,import,imports", NULL);
 }
 
 extern parserDefinition* AntParser (void)
 {
 	static const char *const extensions [] = { "build.xml", NULL };
+	static const char *const patterns [] = { "build.xml", NULL };
 	parserDefinition* const def = parserNew ("Ant");
 	def->extensions = extensions;
+	def->patterns = patterns;
 	def->initialize = installAntRegex;
 	def->method     = METHOD_NOT_CRAFTED|METHOD_REGEX;
 	return def;

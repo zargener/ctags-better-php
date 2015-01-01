@@ -4,3 +4,20 @@ function baz() {}
 function baz_2() {
   baz_2_inner() baz
 }
+
+function with-dash() {
+  with-dash_2() {
+    with-dash_inner() baz
+  }
+}
+
+function noParen {
+    :
+}
+
+function -starting-with-dash() {
+  -starting-with-dash_2() {
+    -starting-with-dash_inner() baz
+    _starting-with-underscore_inner() baz
+  }
+}

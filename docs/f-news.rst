@@ -21,12 +21,15 @@ Following parsers are added.
 * ada
 * coffee *xcmd*
 * css
+* d
 * ctags option library *optlib*
 * falcon
 * go
+* json
 * mib *optlib*
 * rust *optlib*
 * windres
+* SystemVerilog
 
 See "Option library" about  *optlib*.
 See "External parser command" about *xcmd*.
@@ -35,6 +38,7 @@ See "External parser command" about *xcmd*.
 Heavily improved language parsers
 ---------------------------------------------------------------------
 * php
+* verilog
 
 
 New test facility named *Units*
@@ -69,22 +73,60 @@ NOTE: ``/bin/bash`` is needed to report the result.
 Semi-fuzz testing
 ---------------------------------------------------------------------
 One of the frustrating thing is that ctags enters infinite loop
-against unexpected input. I wanted detect this kind of bug.
+against unexpected input. I wanted to decrease this kind of bugs.
+In fuzz target of testing.mak I tried to spot them by giving
+semi-random(semi-broken) input to parses.
 
 ::
 
-	$ make -f testing.mak fuzz FUZZ_LANGUAGE=LANG
+	$ make -f testing.mak fuzz LANGUAGES=LANG1[,LANG2,...]
 
-With this command line, you can given all test inputs
-including *Test/\** and *Units/\*/input.\** to a parser specified
-with ``FUZZ_LANGUAGE`` macro variable. You can get the list of things
-which can be used as ``LANG`` with following command line
+With this command line, you can given all test inputs under
+*Units/\*/input.\** to parsers specified with ``LANGUAGES`` macro
+variable. The output of ctags is just ignored. This target just
+checks the exit status. Ctags is run under timeout command
+in fuzz target, therefore if ctags enters an infinite loop,
+ctags will exits with non-zero status because timeout command
+may terminate the ctags process. The timeout will be reported
+like this::
+
+	[timeout C]                Units/test.vhd.t/input.vhd
+
+This means C parser doesn't stop in 1 second when
+*Units/test.vhd.t/input.vhd* is given as an input. The default
+duration 1 second can be changed with ``TIMEOUT=N`` argument for
+*make* command. If no timeout but the exit status is non-zero,
+the target reports it as following::
+
+	[unexpected-status(N) C]                Units/test.vhd.t/input.vhd
+
+You can get the list of parsers which can be used as a value
+for ``LANGUAGES`` with following command line
 
 ::
 
 	$ ./ctags --list-languages
 
-You can run the target fuzz under ``VG=1``.
+Other than ``LANGUAGES`` and ``TIMEOUT`` fuzz target take following parameters:
+
+	``VG=1``
+
+		Run ctags under valgrind. If valgrind finds memory
+		error it is reported like::
+
+			[valgrind-error Verilog]                Units/array_spec.f90.t/input.f90
+
+		The report of valgrind is recorded at
+		``Units/\*/VALGRIND-${language}.tmp``.
+
+	``SHRINK=1``
+
+		If exit status is non-zero, run ``units shrink`` to
+		minimize the bad input. With bisection algorithm,
+		*misc/units shrink* tries to make the shortest input
+		which makes ctags exits with non-zero status.
+		The result is reported to ``Units/\*/SHRINK-${language}.tmp``.
+		Maybe useful to debug.
 
 Automatic parser selection based on corpora
 ---------------------------------------------------------------------
@@ -111,21 +153,18 @@ More documentation is needed.
 
 Modeline based parser selection
 ---------------------------------------------------------------------
-exuberant-ctags has ability to choose a proper parser based on shebang
-line(e.g. *#!/bin/sh*). This feature is extended in fishman-ctags.
+exuberant-ctags has the ability to choose a proper parser based on shebang
+lines (e.g. *#!/bin/sh*). This feature is extended in fishman-ctags.
 
-Editors like vim and emacs can recognize special patterns in editing
-text file. Here it is called modeline. The pattern in inserted by a
-user of text editor and represents a programming language of the text
-file. With the recognition the editor chooses a mode (in emacs) or a
-syntax (in vim). The editor can change its behavior specializing to a
-programming language based on the mode (or syntax).
+Editors like vim and emacs recognize special patterns in files, which are
+called modelines. The line is inserted by a user of the text editor and can
+be used to set the file type (Vim) or mode (emacs).
 
-fishman-ctags can also recognize the modeline; and choose a language
-parser based on the modeline.
+fishman-ctags also recognizes these modeline and selects a language parser
+based on it if ``--guess-language-eagerly`` (or ``-G``) option is given.
 
 
-ctags recognizes following patterns used in emacs:
+ctags recognizes the following patterns used in emacs:
 
   * at the head of input file or at the line next of shebang line::
 
@@ -144,7 +183,7 @@ ctags recognizes following patterns used in emacs:
       End:
 
 
-ctags recognizes following patterns used in vim:
+ctags recognizes the following patterns used in vim:
 
   * at the end of input file::
 
@@ -154,6 +193,12 @@ ctags recognizes following patterns used in vim:
 
       ex:se ft=SYNTAX
 
+
+NOTE: This feature takes some costs, opening the input file
+before parsing, than selecting a parser by the input
+file name. So this feature is enabled only if the option
+is given. If you like this feature, you can put
+``--guess-language-eagerly`` to your .ctags.
 
 Better parser selection for template files
 ---------------------------------------------------------------------
@@ -165,12 +210,12 @@ ctags used suffix here *\*.in* for choosing a parser. *.in* shows
 nothing about the language used in the input file. When fishman-ctags
 finds *.in* as suffix, fishman-ctags checks the next suffix, here *.c*.
 
-Dry runnning
+Dry running
 ---------------------------------------------------------------------
-With ``--guess-parser`` option, you can test the parser selector of
+With ``--print-language`` option, you can test the parser selector of
 ctags. e.g.::
 
-	$ ./ctags --guess-parser main.c
+	$ ./ctags --print-language main.c
 	main.c: C
 
 If no parser is selected, ``NONE`` is printed as parser name.

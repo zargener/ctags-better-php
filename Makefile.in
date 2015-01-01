@@ -72,7 +72,7 @@ include $(srcdir)/source.mak
 .SUFFIXES: .c .$(OBJEXT)
 
 VPATH	= $(srcdir) $(srcdir)/data/corpora $(srcdir)/data/optlib \
-	$(srcdir)/gnu_regex
+	$(srcdir)/gnu_regex $(srcdir)/fnmatch
 
 INSTALL		= cp -p
 INSTALL_PROG	= $(INSTALL)
@@ -167,6 +167,13 @@ etyperef.o: eiffel.c
 
 $(OBJECTS): $(HEADERS) config.h Makefile
 
+# Regenerate the Makefile whenever this file (it's source) changed.  Any target
+# should trigger this as it may affect their rules.  This implementation only
+# works with GNU make but should be harmless for other implementations.
+%: Makefile
+Makefile: Makefile.in config.status
+	./config.status --file $@
+
 #
 # generic install rules
 #
@@ -246,9 +253,10 @@ install-data-optlib: $(addprefix data/optlib/,$(OPTLIB))  $(DESTDIR)$(optlibdir)
 		$(INSTALL_DATA) $(srcdir)/data/optlib/$$c $(DESTDIR)$(optlibdir)/$$c && chmod 644 $(DESTDIR)$(optlibdir)/$$c; \
 	done
 install-data-preload: $(DESTDIR)$(preloaddir) $(DESTDIR)$(pkgconf_preloaddir) FORCE
+	echo > $(DESTDIR)$(preloaddir)/$(DEFAULT_PRELOAD_FILE)
 	for c in $(PRELOAD_OPTLIB); do \
 		echo "--options=$$(basename $$c .ctags)" >> $(DESTDIR)$(preloaddir)/$(DEFAULT_PRELOAD_FILE); \
-	done; \
+	done
 	chmod 644 $(DESTDIR)$(preloaddir)/$(DEFAULT_PRELOAD_FILE)
 
 #
@@ -316,7 +324,7 @@ tags: $(CTAGS_EXEC)
 TAGS: $(CTAGS_EXEC)
 	./$(CTAGS_EXEC) -e $(srcdir)/*
 
-clean:
+clean: clean-units
 	rm -f $(OBJECTS) $(CTAGS_EXEC) tags TAGS $(READ_LIB) 
 	rm -f dctags$(EXEEXT) $(READ_CMD)
 	rm -f etyperef$(EXEEXT) etyperef.$(OBJEXT)
@@ -340,8 +348,56 @@ $(addsuffix .$(OBJEXT),$(basename $(notdir $(REGEX_SOURCES)))): ALL_CPPFLAGS += 
 #
 # check
 #
-include $(srcdir)/testing.mak
-check: $(CTAGS_TEST)
-	$(MAKE) -f testing.mak test.units
+CTAGS_TEST = ./$(CTAGS_EXEC)
+ifdef VG
+VALGRIND=--with-valgrind
+endif
+ifdef SHRINK
+RUN_SHRINK=--run-shrink
+endif
+TIMEOUT=
+LANGUAGES=
+CATEGORIES=
+UNITS=
+ifdef TRAVIS
+SHOW_DIFF_OUTPUT=--show-diff-output
+endif
+
+.PHONY: check units fuzz  clean-units
+check: units
+
+#
+# FUZZ Target
+#
+# SHELL must be dash or bash.
+#
+fuzz: TIMEOUT := 1
+fuzz: $(CTAGS_TEST)
+	@ \
+	c="misc/units fuzz \
+		--ctags=$(CTAGS_TEST) \
+		--languages=$(LANGUAGES) \
+		$(VALGRIND) $(RUN_SHRINK) \
+		--with-timeout=$(TIMEOUT)"; \
+	$(SHELL) $${c} Units
+
+#
+# UNITS Target
+#
+units: TIMEOUT := 5
+units: $(CTAGS_TEST)
+	@ \
+	c="misc/units run \
+		--ctags=$(CTAGS_TEST) \
+		--languages=$(LANGUAGES) \
+		--categories=$(CATEGORIES) \
+		--units=$(UNITS) \
+		$(VALGRIND) $(RUN_SHRINK) \
+		--with-timeout=$(TIMEOUT) \
+		$(SHOW_DIFF_OUTPUT)"; \
+	 $(SHELL) $${c} Units
+
+clean-units:
+	$(SHELL) misc/units clean Units
 
 # vi:set tabstop=8:

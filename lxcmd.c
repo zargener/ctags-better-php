@@ -13,6 +13,7 @@
 *
 */
 
+#define XCMD_NOT_AVAILABLE_STATUS 77
 
 /*
   XCMD PROTOCOL
@@ -40,8 +41,10 @@
 */
 #include "general.h"  /* must always come first */
 
+#define _GNU_SOURCE   /* for WIFEXITED and WEXITSTATUS */
 #include <errno.h>
 #include <ctype.h>
+#include <stdlib.h>   /* for WIFEXITED and WEXITSTATUS */
 #include <string.h>
 
 #include "debug.h"
@@ -286,11 +289,15 @@ static boolean loadPathKinds  (xcmdPath *const path, const langType language)
 
 		/* TODO: Decode status */
 		verbose("	status: %d\n", status);
-
 		if (status != 0)
 		{
-			error (WARNING, "xcmd exits abnormally status(%d): [%s %s]",
-			       status, argv[0], argv[1]);
+			if (status > 0 
+			    && WIFEXITED (status) 
+			    && (WEXITSTATUS (status) == XCMD_NOT_AVAILABLE_STATUS))
+				error (WARNING, "xcmd recognizes %s is not available", argv[0]);
+			else
+				error (WARNING, "xcmd exits abnormally status(%d): [%s %s]",
+				       status, argv[0], argv[1]);
 			vStringDelete (opt);
 			return FALSE;
 		}
@@ -685,7 +692,7 @@ static boolean fillEntry (const xcmdPath* path, tagEntry* entry)
 	return FALSE;
 }
 
-const char *const PseudoTagPrefix = "!_";
+static const char *const PseudoTagPrefix = "!_";
 static boolean hasPseudoTagPrefix (const char* const name)
 {
 	const size_t prefixLength = strlen (PseudoTagPrefix);
@@ -772,7 +779,7 @@ static boolean parseXcmdPath (char* line, xcmdPath* path, tagEntry* entry)
 static void freeTagEntry (tagEntry* entry)
 {
 	eFree (entry->fields.list);
-	entry->fields.list = 0;
+	entry->fields.list = NULL;
 	entry->fields.count = 0;
 }
 

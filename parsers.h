@@ -28,6 +28,7 @@
 	CssParser, \
 	CsharpParser, \
 	CobolParser, \
+	DParser, \
 	DosBatchParser, \
 	EiffelParser, \
 	ErlangParser, \
@@ -38,6 +39,7 @@
 	HtmlParser, \
 	JavaParser, \
 	JavaScriptParser, \
+	JsonParser, \
 	LispParser, \
 	LuaParser, \
 	MakefileParser, \
@@ -59,6 +61,7 @@
 	TexParser, \
 	VeraParser, \
 	VerilogParser, \
+	SystemVerilogParser, \
 	VhdlParser, \
 	VimParser, \
 	WindResParser, \

@@ -168,7 +168,8 @@ optionValues Option = {
 	FALSE,      /* --tag-relative */
 	FALSE,      /* --totals */
 	FALSE,      /* --line-directives */
-	FALSE,	    /* --guess-parser */
+	FALSE,	    /* --print-language */
+	FALSE,	    /* --guess-language-eagerly(-G) */
 #ifdef DEBUG
 	0, 0        /* -D, -b */
 #endif
@@ -194,6 +195,7 @@ static optionDescription LongOptionDescription [] = {
  {1,"       Write tags to specified file. Value of \"-\" writes tags to stdout"},
  {1,"       [\"tags\"; or \"TAGS\" when -e supplied]."},
  {0,"  -F   Use forward searching patterns (/.../) (default)."},
+ {1,"  -G   Equivalent to --guess-language-eagerly."},
  {1,"  -h <list>"},
  {1,"       Specify list of file extensions to be treated as include files."},
  {1,"       [\".h.H.hh.hpp.hxx.h++\"]."},
@@ -243,14 +245,18 @@ static optionDescription LongOptionDescription [] = {
  {1,"  --filter-terminator=string"},
  {1,"       Specify string to print to stdout following the tags for each file"},
  {1,"       parsed when --filter is enabled."},
+ {1,"  --guess-language-eagerly"},
+ {1,"       Guess the language of input file more eagerly: "},
+ {1,"       (but taking longer time for guessing)"},
+ {1,"       o shebang even the input file is not executable,"},
+ {1,"       o emacs mode specification at the beginning and end of input file, and"},
+ {1,"       o vim syntax specification at the end of input file."},
  {0,"  --format=level"},
 #if DEFAULT_FILE_FORMAT == 1
  {0,"       Force output of specified tag file format [1]."},
 #else
  {0,"       Force output of specified tag file format [2]."},
 #endif
- {0,"  --guess-parser"},
- {0,"       Don't make tags file but just print the parser name guessed from input file."},
  {1,"  --help"},
  {1,"       Print this option summary."},
  {1,"  --if0=[yes|no]"},
@@ -303,6 +309,8 @@ static optionDescription LongOptionDescription [] = {
  {1,"       Output list of language mappings."},
  {1,"  --options=file"},
  {1,"       Specify file from which command line options should be read."},
+ {0,"  --print-language"},
+ {0,"       Don't make tags file but just print the guessed language name for input file."},
  {1,"  --recurse=[yes|no]"},
 #ifdef RECURSE_SUPPORTED
  {1,"       Recurse into directories supplied on command line [no]."},
@@ -530,7 +538,7 @@ extern void verbose (const char *const format, ...)
 	{
 		va_list ap;
 		va_start (ap, format);
-		vprintf (format, ap);
+		vfprintf (stderr, format, ap);
 		va_end (ap);
 	}
 }
@@ -855,9 +863,9 @@ static void addExtensionList (
 	}
 	if (Option.verbose)
 	{
-		printf ("\n      now: ");
-		stringListPrint (slist);
-		putchar ('\n');
+		fprintf (stderr, "\n      now: ");
+		stringListPrint (slist, stderr);
+		putc ('\n', stderr);
 	}
 	eFree (extensionList);
 }
@@ -1747,9 +1755,9 @@ static void installHeaderListDefaults (void)
 	Option.headerExt = stringListNewFromArgv (HeaderExtensions);
 	if (Option.verbose)
 	{
-		printf ("    Setting default header extensions: ");
-		stringListPrint (Option.headerExt);
-		putchar ('\n');
+		fprintf (stderr, "    Setting default header extensions: ");
+		stringListPrint (Option.headerExt, stderr);
+		putc ('\n', stderr);
 	}
 }
 
@@ -2052,11 +2060,12 @@ static booleanOption BooleanOptions [] = {
 	{ "file-scope",     &Option.include.fileScope,      FALSE   },
 	{ "file-tags",      &Option.include.fileNames,      FALSE   },
 	{ "filter",         &Option.filter,                 TRUE    },
-	{ "guess-parser",   &Option.guessParser,	    TRUE    },
+	{ "guess-language-eagerly", &Option.guessLanguageEagerly, TRUE },
 	{ "if0",            &Option.if0,                    FALSE   },
 	{ "kind-long",      &Option.kindLong,               TRUE    },
 	{ "line-directives",&Option.lineDirectives,         FALSE   },
 	{ "links",          &Option.followLinks,            FALSE   },
+	{ "print-language", &Option.printLanguage,          TRUE    },
 #ifdef RECURSE_SUPPORTED
 	{ "recurse",        &Option.recurse,                FALSE   },
 #endif
@@ -2223,6 +2232,9 @@ static void processShortOption (
 		case 'F':
 			Option.backward = FALSE;
 			break;
+		case 'G':
+			Option.guessLanguageEagerly = TRUE;
+			break;
 		case 'h':
 			processHeaderListOption (*option, parameter);
 			break;
@@ -2364,11 +2376,17 @@ static void parseConfigurationFileOptionsInDirectory (const char* directory)
 {
 	char	*leafname = NULL;
 
-	asprintf (&leafname,".%s",(Option.configFilename)?Option.configFilename:"ctags");
+	if (asprintf (&leafname,".%s",(Option.configFilename)?Option.configFilename:"ctags") == -1)
+	{
+		error (FATAL, "error in asprintf");
+	}
 	parseConfigurationFileOptionsInDirectoryWithLeafname (directory, leafname);
 	free (leafname);
 #ifdef MSDOS_STYLE_PATH
-	asprintf (&leafname,"%s.cnf",(Option.configFilename)?Option.configFilename:"ctags");
+	if (asprintf (&leafname,"%s.cnf",(Option.configFilename)?Option.configFilename:"ctags") == -1)
+	{
+		error (FATAL, "error in asprintf");
+	}
 	parseConfigurationFileOptionsInDirectoryWithLeafname (directory, leafname);
 	free (leafname);
 #endif
@@ -2454,7 +2472,7 @@ static boolean parseAllConfigurationFilesOptionsInDirectory (const char* const d
 }
 #else
 static boolean parseAllConfigurationFilesOptionsInDirectory (const char* const dirName,
-							     stringList* already_loaded_files)
+							     stringList* const already_loaded_files)
 {
 	return FALSE;
 }
@@ -2488,15 +2506,24 @@ static void parseConfigurationFileOptions (void)
 	filename_body = (Option.configFilename)?Option.configFilename:"ctags";
 #ifdef MSDOS_STYLE_PATH
 
-	asprintf (&filename,"/%s.cnf", filename_body);
+	if (asprintf (&filename,"/%s.cnf", filename_body) == -1)
+	{
+		error (FATAL, "error in asprintf");
+	}
 	parseFileOptions (filename);
 	free (filename);
 #endif
-	asprintf (&filename,"/etc/%s.conf", filename_body);
+	if (asprintf (&filename,"/etc/%s.conf", filename_body) == -1)
+	{
+		error (FATAL, "error in asprintf");
+	}
 	parseFileOptions (filename);
 	free (filename);
 
-	asprintf (&filename,"/usr/local/etc/%s.conf", filename_body);
+	if (asprintf (&filename,"/usr/local/etc/%s.conf", filename_body) == -1)
+	{
+		error (FATAL, "error in asprintf");
+	}
 	parseFileOptions (filename);
 	free (filename);
 
