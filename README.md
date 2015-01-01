@@ -7,25 +7,28 @@ parser in this fork is better for some developers. What it can:
 - better jumping - for each nested var/definition this parser
   generates two tags:
 
-  tagname
+  `tagname`
 
   and
 
-  tagname<Parent>
+  `tagname<Parent>`
 
-  It dramatically helps when you using find-tag in emacs or so.
+It dramatically helps when you using find-tag in emacs or so.
 
-  For example you have class member called "name", and lots of other
-  classes in your project has same member. So to find tag you type:
+For example you have class member called "name", and lots of other
+classes in your project has same member. So to find tag you type:
 
-  name<Class
+`name<Class`
 
-  And jump to needed class. Try it, you'll love it. Especially on
-  monster projects on monster Symfony.
-
+And jump to needed class. Try it, you'll love it. Especially on
+monster projects on monster Symfony.
 
 Of course such strategy leads to bigger TAGS files, but comfort worth
 it.
+
+There how it looks for end-user:
+
+![alt tag](https://raw.github.com/username/projectname/branch/path/to/img.png)
 
 =====================================================================
 
